@@ -13,6 +13,7 @@ st.set_page_config(
     page_title="ResearchMind",
     page_icon="🔬",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
 
 # ── Custom CSS ───────────────────────────────────────────────────────────
@@ -383,14 +384,33 @@ with left:
 
     # Pipeline stages — visual status
     stages = [
-        ("🗂", "Planner", "Gemini Flash · Breaks topic into subtasks", 1),
-        ("📋", "Summarizer", "Gemini Flash · Extracts key facts per subtask", 2),
-        ("✍️", "Synthesizer", "Claude Haiku · Writes polished report", 3),
+        (
+            "🗂", "Planner", "Gemini Flash · Breaks topic into subtasks", 1,
+            "google", "gemini-2.5-flash",
+            "Reads your cross-session memory first to avoid repeating past research, "
+            "then breaks your topic into 3–5 focused subtasks. "
+            "Outputs a JSON array consumed by the next stage."
+        ),
+        (
+            "📋", "Summarizer", "Gemini Flash · Extracts key facts per subtask", 2,
+            "google", "gemini-2.5-flash",
+            "Processes each subtask independently. "
+            "Extracts 5–8 key facts with APA citations after every finding. "
+            "Adds a ## Sources section at the end of each subtask summary."
+        ),
+        (
+            "✍️", "Synthesizer", "Claude Haiku · Writes polished report", 3,
+            "anthropic", "claude-haiku-4-5-20251001",
+            "Reads all findings from the Summarizer. "
+            "Writes a structured research brief with executive summary, "
+            "key findings by subtopic, implications, open questions, "
+            "and a full APA ## References section at the end."
+        ),
     ]
 
     st.markdown('<div class="stage-label">Pipeline stages</div>', unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
-    for icon, name, model_desc, stage_num in stages:
+    for icon, name, model_desc, stage_num, provider, model, description in stages:
         css_class = "stage-card"
         if st.session_state.pipeline_stage == stage_num:
             css_class += " active"
@@ -408,6 +428,10 @@ with left:
             <div class="stage-model">{model_desc}</div>
         </div>
         """, unsafe_allow_html=True)
+
+        with st.expander(f"About {name}"):
+            st.markdown(f"**Model:** `{provider} / {model}`")
+            st.markdown(f"**Role:** {description}")
 
     # Subtasks preview
     if st.session_state.subtasks:
