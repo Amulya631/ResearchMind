@@ -34,7 +34,7 @@ ResearchMind is a multi-model AI pipeline built on the Backboard SDK. It decompo
 
 ## Live Demo
 
-🚀 **[researchmind-production.railway.app](https://researchmind-production.railway.app)**
+🚀 **[researchmind-production.railway.app](https://researchmind-production-04c7.up.railway.app)**
 
 ---
 
