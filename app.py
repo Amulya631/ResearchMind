@@ -31,6 +31,12 @@ st.markdown("""
 
     #MainMenu, footer, header { visibility: hidden; }
 
+    /* ── RESPONSIVE ── */
+    @media (max-width: 900px) {
+        .hero-title { font-size: 1.8rem !important; }
+        .stage-card { padding: 0.6rem 0.8rem !important; }
+    }
+
     /* ── SIDEBAR ── */
     [data-testid="stSidebar"] {
         background: #ffffff !important;
@@ -366,7 +372,7 @@ with left:
         label_visibility="collapsed",
     )
 
-    col1, col2 = st.columns([2, 1])
+    col1, col2 = st.columns([1, 1])
     with col1:
         start = st.button("▶  Start Research", type="primary", use_container_width=True)
     with col2:
