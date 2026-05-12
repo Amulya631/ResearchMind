@@ -553,9 +553,9 @@ with right:
                     )
 
                 pdf = FPDF()
-                pdf.set_auto_page_break(auto=True, margin=15)
+                pdf.set_auto_page_break(auto=True, margin=12)
                 pdf.add_page()
-                pdf.set_margins(20, 20, 20)
+                pdf.set_margins(15, 15, 15)
 
                 # Title
                 pdf.set_font("Helvetica", "B", 20)
@@ -600,7 +600,9 @@ with right:
                     elif line.startswith('- ') or line.startswith('* '):
                         pdf.set_font("Helvetica", "", 10)
                         pdf.set_text_color(51, 65, 85)
-                        pdf.multi_cell(0, 6, clean("  • " + line[2:]))
+                        bullet_text = clean(line[2:]).strip()
+                        if bullet_text:
+                            pdf.multi_cell(0, 6, "  - " + bullet_text)
                     else:
                         pdf.set_font("Helvetica", "", 10)
                         pdf.set_text_color(71, 85, 105)
