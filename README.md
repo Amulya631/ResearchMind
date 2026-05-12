@@ -146,6 +146,7 @@ ResearchMind/
 backboard-sdk>=1.5.0
 streamlit>=1.32.0
 python-dotenv>=1.0.0
+fpdf2>=2.7.0
 ```
 
 ---
