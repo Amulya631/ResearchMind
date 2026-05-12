@@ -392,13 +392,73 @@ with right:
                     st.markdown(m.content)
                     brief_start = m.content.find("Key conclusions:")
                     if brief_start != -1:
-                        st.download_button(
-                            label="⬇️ Download brief excerpt",
-                            data=m.content,
-                            file_name=f"researchmind_{topic[:30].replace(' ', '_')}.txt",
-                            mime="text/plain",
-                            key=f"dl_{topic[:20]}",
-                        )
+                        brief_excerpt = m.content[brief_start + 16:].strip()
+                        safe_topic = topic[:30].replace(' ', '_')
+                        dcol1, dcol2 = st.columns(2)
+                        with dcol1:
+                            st.download_button(
+                                label="⬇️ Download .txt",
+                                data=m.content,
+                                file_name=f"researchmind_{safe_topic}.txt",
+                                mime="text/plain",
+                                key=f"dl_txt_{topic[:20]}",
+                            )
+                        with dcol2:
+                            try:
+                                from fpdf import FPDF
+                                import unicodedata
+                                def clean_mem(text):
+                                    replacements = {
+                                        '—': '-', '–': '-', '‘': "'", '’': "'",
+                                        '“': '"', '”': '"', '•': '*', '·': '.',
+                                        '…': '...', ' ': ' ', '−': '-',
+                                    }
+                                    for orig, repl in replacements.items():
+                                        text = text.replace(orig, repl)
+                                    return ''.join(
+                                        c if ord(c) < 256 else unicodedata.normalize('NFKD', c).encode('ascii', 'ignore').decode()
+                                        for c in text
+                                    )
+                                mem_pdf = FPDF()
+                                mem_pdf.set_auto_page_break(auto=True, margin=12)
+                                mem_pdf.add_page()
+                                mem_pdf.set_margins(15, 15, 15)
+                                mem_pdf.set_font("Helvetica", "B", 16)
+                                mem_pdf.set_text_color(15, 23, 42)
+                                mem_pdf.multi_cell(0, 10, clean_mem(f"ResearchMind - {topic}"), align="C")
+                                mem_pdf.ln(4)
+                                for line in brief_excerpt.split("\n"):
+                                    line = line.strip()
+                                    if not line:
+                                        mem_pdf.ln(3)
+                                    elif line.startswith('## '):
+                                        mem_pdf.set_font("Helvetica", "B", 13)
+                                        mem_pdf.set_text_color(37, 99, 235)
+                                        mem_pdf.multi_cell(0, 8, clean_mem(line[3:]))
+                                    elif line.startswith('# '):
+                                        mem_pdf.set_font("Helvetica", "B", 14)
+                                        mem_pdf.set_text_color(15, 23, 42)
+                                        mem_pdf.multi_cell(0, 9, clean_mem(line[2:]))
+                                    elif line.startswith('- ') or line.startswith('* '):
+                                        mem_pdf.set_font("Helvetica", "", 10)
+                                        mem_pdf.set_text_color(51, 65, 85)
+                                        bt = clean_mem(line[2:]).strip()
+                                        if bt:
+                                            mem_pdf.multi_cell(0, 6, "  - " + bt)
+                                    else:
+                                        mem_pdf.set_font("Helvetica", "", 10)
+                                        mem_pdf.set_text_color(71, 85, 105)
+                                        mem_pdf.multi_cell(0, 6, clean_mem(line))
+                                mem_pdf_bytes = bytes(mem_pdf.output())
+                                st.download_button(
+                                    label="📄 Download PDF",
+                                    data=mem_pdf_bytes,
+                                    file_name=f"researchmind_{safe_topic}.pdf",
+                                    mime="application/pdf",
+                                    key=f"dl_pdf_{topic[:20]}",
+                                )
+                            except Exception:
+                                pass
         else:
             st.info("No past sessions found. Run your first query to build memory.")
 
@@ -560,7 +620,7 @@ with right:
                 # Title
                 pdf.set_font("Helvetica", "B", 20)
                 pdf.set_text_color(15, 23, 42)
-                pdf.multi_cell(0, 10, clean("ResearchMind — Research Brief"), align="C")
+                pdf.multi_cell(0, 10, clean("ResearchMind - Research Brief"), align="C")
                 pdf.ln(2)
 
                 # Topic
@@ -573,7 +633,8 @@ with right:
                 # Divider
                 pdf.set_draw_color(226, 232, 240)
                 pdf.set_line_width(0.5)
-                pdf.line(20, pdf.get_y(), 190, pdf.get_y())
+                page_w = pdf.w - pdf.r_margin
+                pdf.line(pdf.l_margin, pdf.get_y(), page_w, pdf.get_y())
                 pdf.ln(6)
 
                 # Brief content
@@ -611,7 +672,8 @@ with right:
                 # Footer
                 pdf.ln(6)
                 pdf.set_draw_color(226, 232, 240)
-                pdf.line(20, pdf.get_y(), 190, pdf.get_y())
+                page_w2 = pdf.w - pdf.r_margin
+                pdf.line(pdf.l_margin, pdf.get_y(), page_w2, pdf.get_y())
                 pdf.ln(4)
                 pdf.set_font("Helvetica", "I", 8)
                 pdf.set_text_color(148, 163, 184)
