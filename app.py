@@ -256,11 +256,18 @@ with left:
         ("🤖 LLMs", "Large language model architectures"),
         ("⚡ Energy", "Renewable energy storage solutions"),
     ]
-    chip_cols = st.columns(len(chips))
-    for i, (label, full_topic) in enumerate(chips):
-        with chip_cols[i]:
-            if st.button(label, key=f"chip_{i}"):
-                st.session_state.selected_chip = full_topic
+    # Row 1: 3 chips
+    row1 = st.columns(3)
+    for i in range(3):
+        with row1[i]:
+            if st.button(chips[i][0], key=f"chip_{i}", use_container_width=True):
+                st.session_state.selected_chip = chips[i][1]
+    # Row 2: 2 chips
+    row2 = st.columns(2)
+    for i in range(2):
+        with row2[i]:
+            if st.button(chips[i+3][0], key=f"chip_{i+3}", use_container_width=True):
+                st.session_state.selected_chip = chips[i+3][1]
 
     st.markdown("<br>", unsafe_allow_html=True)
 
