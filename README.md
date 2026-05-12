@@ -102,7 +102,7 @@ cd ResearchMind
 
 **2. Install dependencies**
 ```bash
-pip install backboard-sdk streamlit python-dotenv
+pip install -r requirements.txt
 ```
 
 **3. Configure environment**
