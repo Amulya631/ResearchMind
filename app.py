@@ -615,7 +615,7 @@ with right:
                 pdf = FPDF()
                 pdf.set_auto_page_break(auto=True, margin=12)
                 pdf.add_page()
-                pdf.set_margins(15, 15, 15)
+                pdf.set_margins(10, 10, 10)
 
                 # Title
                 pdf.set_font("Helvetica", "B", 20)
@@ -646,17 +646,20 @@ with right:
                     if line.startswith('## '):
                         pdf.set_font("Helvetica", "B", 13)
                         pdf.set_text_color(37, 99, 235)
-                        pdf.multi_cell(0, 8, clean(line[3:]))
+                        h2_text = clean(line[3:])
+                        if h2_text.strip(): pdf.multi_cell(0, 8, h2_text)
                         pdf.ln(1)
                     elif line.startswith('### '):
                         pdf.set_font("Helvetica", "B", 11)
                         pdf.set_text_color(51, 65, 85)
-                        pdf.multi_cell(0, 7, clean(line[4:]))
+                        h3_text = clean(line[4:])
+                        if h3_text.strip(): pdf.multi_cell(0, 7, h3_text)
                         pdf.ln(1)
                     elif line.startswith('# '):
                         pdf.set_font("Helvetica", "B", 16)
                         pdf.set_text_color(15, 23, 42)
-                        pdf.multi_cell(0, 10, clean(line[2:]))
+                        h1_text = clean(line[2:])
+                        if h1_text.strip(): pdf.multi_cell(0, 10, h1_text)
                         pdf.ln(2)
                     elif line.startswith('- ') or line.startswith('* '):
                         pdf.set_font("Helvetica", "", 10)
@@ -667,7 +670,9 @@ with right:
                     else:
                         pdf.set_font("Helvetica", "", 10)
                         pdf.set_text_color(71, 85, 105)
-                        pdf.multi_cell(0, 6, clean(line))
+                        cleaned = clean(line)
+                        if cleaned.strip():
+                            pdf.multi_cell(0, 6, cleaned)
 
                 # Footer
                 pdf.ln(6)
@@ -688,8 +693,16 @@ with right:
                     mime="application/pdf",
                     use_container_width=True,
                 )
-            except ImportError:
-                st.caption("Install fpdf2 for PDF export")
+            except Exception as pdf_err:
+                st.download_button(
+                    label="📄  Download PDF (unavailable)",
+                    data=st.session_state.brief,
+                    file_name=f"researchmind_{safe_name}.txt",
+                    mime="text/plain",
+                    use_container_width=True,
+                    disabled=False,
+                )
+                st.caption(f"PDF unavailable — download .txt instead")
 
         with col_note:
             st.caption("💾 Conclusions saved to Planner memory. Click **Memory** to verify.")
