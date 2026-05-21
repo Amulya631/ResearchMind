@@ -596,107 +596,88 @@ with right:
             # Generate PDF using fpdf2
             try:
                 from fpdf import FPDF
-                import unicodedata
+                import unicodedata as _ud
 
                 def clean(text):
                     replacements = {
-                        '—': '-', '–': '-', '‘': "'", '’': "'",
-                        '“': '"', '”': '"', '•': '-', '·': '.',
-                        '…': '...', ' ': ' ', '−': '-',
-                        '′': "'", '″': '"', '‐': '-', '‑': '-',
+                        "\u2014": "-", "\u2013": "-", "\u2018": "'", "\u2019": "'",
+                        "\u201c": '"', "\u201d": '"', "\u2022": "-", "\u00b7": ".",
+                        "\u2026": "...", "\u00a0": " ", "\u2212": "-",
+                        "\u2032": "'", "\u2033": '"', "\u2010": "-", "\u2011": "-",
+                        "**": "", "*": "",
                     }
                     for orig, repl in replacements.items():
                         text = text.replace(orig, repl)
-                    # Strip non-latin chars
-                    import unicodedata
-                    text = ''.join(
-                        c if ord(c) < 256 else unicodedata.normalize('NFKD', c).encode('ascii', 'ignore').decode()
+                    text = "".join(
+                        c if ord(c) < 256 else _ud.normalize("NFKD", c).encode("ascii", "ignore").decode()
                         for c in text
                     )
-                    # Break any word longer than 80 chars with a space to prevent layout crash
-                    words = text.split(' ')
+                    # Break words longer than 70 chars
+                    words = text.split(" ")
                     broken = []
                     for w in words:
-                        if len(w) > 80:
-                            broken.extend([w[i:i+80] for i in range(0, len(w), 80)])
+                        if len(w) > 70:
+                            broken.extend([w[i:i+70] for i in range(0, len(w), 70)])
                         else:
                             broken.append(w)
-                    return ' '.join(broken)
+                    return " ".join(broken)
+
+                def safe_write(pdf, h, text):
+                    t = clean(str(text)).strip()
+                    if t:
+                        try:
+                            pdf.multi_cell(0, h, t)
+                        except Exception:
+                            pass
 
                 pdf = FPDF()
                 pdf.set_auto_page_break(auto=True, margin=12)
                 pdf.add_page()
                 pdf.set_margins(10, 10, 10)
 
-                # Title
                 pdf.set_font("Helvetica", "B", 20)
                 pdf.set_text_color(15, 23, 42)
-                pdf.multi_cell(0, 10, clean("ResearchMind - Research Brief"), align="C")
+                safe_write(pdf, 10, "ResearchMind - Research Brief")
                 pdf.ln(2)
-
-                # Topic
                 pdf.set_font("Helvetica", "", 11)
                 pdf.set_text_color(100, 116, 139)
                 topic_line = st.session_state.last_query or query or "Research"
-                pdf.multi_cell(0, 7, clean(f"Topic: {topic_line}"), align="C")
+                safe_write(pdf, 7, f"Topic: {topic_line}")
                 pdf.ln(6)
 
-                # Divider
-                pdf.set_draw_color(226, 232, 240)
-                pdf.set_line_width(0.5)
-                page_w = pdf.w - pdf.r_margin
-                pdf.line(pdf.l_margin, pdf.get_y(), page_w, pdf.get_y())
-                pdf.ln(6)
-
-                # Brief content
-                for line in st.session_state.brief.split('\n'):
+                for line in st.session_state.brief.split("\n"):
                     line = line.strip()
                     if not line:
-                        pdf.ln(3)
-                        continue
-                    if line.startswith('## '):
+                        pdf.ln(2)
+                    elif line.startswith("## "):
                         pdf.set_font("Helvetica", "B", 13)
                         pdf.set_text_color(37, 99, 235)
-                        h2_text = clean(line[3:])
-                        if h2_text.strip(): pdf.multi_cell(0, 8, h2_text)
+                        safe_write(pdf, 8, line[3:])
                         pdf.ln(1)
-                    elif line.startswith('### '):
+                    elif line.startswith("### "):
                         pdf.set_font("Helvetica", "B", 11)
                         pdf.set_text_color(51, 65, 85)
-                        h3_text = clean(line[4:])
-                        if h3_text.strip(): pdf.multi_cell(0, 7, h3_text)
-                        pdf.ln(1)
-                    elif line.startswith('# '):
+                        safe_write(pdf, 7, line[4:])
+                    elif line.startswith("# "):
                         pdf.set_font("Helvetica", "B", 16)
                         pdf.set_text_color(15, 23, 42)
-                        h1_text = clean(line[2:])
-                        if h1_text.strip(): pdf.multi_cell(0, 10, h1_text)
+                        safe_write(pdf, 10, line[2:])
                         pdf.ln(2)
-                    elif line.startswith('- ') or line.startswith('* '):
+                    elif line.startswith("- ") or line.startswith("* "):
                         pdf.set_font("Helvetica", "", 10)
                         pdf.set_text_color(51, 65, 85)
-                        bullet_text = clean(line[2:]).strip()
-                        if bullet_text:
-                            pdf.multi_cell(0, 6, "  - " + bullet_text)
+                        safe_write(pdf, 6, "  - " + line[2:])
                     else:
                         pdf.set_font("Helvetica", "", 10)
                         pdf.set_text_color(71, 85, 105)
-                        cleaned = clean(line)
-                        if cleaned.strip():
-                            pdf.multi_cell(0, 6, cleaned)
+                        safe_write(pdf, 6, line)
 
-                # Footer
-                pdf.ln(6)
-                pdf.set_draw_color(226, 232, 240)
-                page_w2 = pdf.w - pdf.r_margin
-                pdf.line(pdf.l_margin, pdf.get_y(), page_w2, pdf.get_y())
                 pdf.ln(4)
                 pdf.set_font("Helvetica", "I", 8)
                 pdf.set_text_color(148, 163, 184)
-                pdf.cell(0, 5, "Generated by ResearchMind - Backboard Challenges Hackathon 2026", align="C")
+                safe_write(pdf, 5, "Generated by ResearchMind - Backboard Challenges Hackathon 2026")
 
                 pdf_bytes = bytes(pdf.output())
-
                 st.download_button(
                     label="📄  Download PDF",
                     data=pdf_bytes,
@@ -705,55 +686,12 @@ with right:
                     use_container_width=True,
                 )
             except Exception as pdf_err:
+                print(f"PDF ERROR: {pdf_err}")
                 st.download_button(
-                    label="📄  Download PDF (unavailable)",
+                    label="⬇️  Download .txt",
                     data=st.session_state.brief,
                     file_name=f"researchmind_{safe_name}.txt",
                     mime="text/plain",
                     use_container_width=True,
-                    disabled=False,
                 )
-                st.caption(f"PDF unavailable — download .txt instead")
-
-        with col_note:
-            st.caption("💾 Conclusions saved to Planner memory. Click **Memory** to verify.")
-
-    # ── EMPTY STATE ──────────────────────────────────────────────────────
-    if not st.session_state.brief and not st.session_state.memories:
-        st.markdown("""
-        <div class="empty-state">
-            <div class="empty-icon">🔬</div>
-            <div class="empty-title">Enter a topic and hit Start Research</div>
-            <div class="empty-sub">
-                Three AIs collaborate and produce a polished brief.<br>
-                Results persist across sessions via Backboard memory.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-
-# ── SIDEBAR ──────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown('<p style="font-family:\'Plus Jakarta Sans\',sans-serif;font-weight:800;font-size:1.1rem;color:#0f172a;margin-bottom:0">ResearchMind</p>', unsafe_allow_html=True)
-    st.markdown('<p style="font-size:0.7rem;color:#64748b;letter-spacing:0.1em;text-transform:uppercase;margin-top:0">Backboard Challenges · May 2026</p>', unsafe_allow_html=True)
-    st.markdown("---")
-    st.markdown("**How it works**")
-    st.markdown("""
-- 🗂 **Planner** (Gemini Flash) — breaks topic into 3–5 subtasks, checks memory to avoid repeats
-- 📋 **Summarizer** (Gemini Flash) — extracts 5–8 key facts with APA citations per subtask
-- ✍️ **Synthesizer** (Claude Haiku) — synthesizes findings, writes polished brief with references
-- 🧠 **Memory** — conclusions saved to Planner after every session
-    """)
-    st.markdown("---")
-    st.markdown("**Backboard features used**")
-    st.markdown("""
-- Multi-assistant architecture
-- Multi-model routing
-- Inline findings synthesis
-- Persistent cross-session memory
-    """)
-    st.markdown("---")
-    st.markdown(
-        '<p style="font-size:0.72rem;color:#94a3b8;">Built with Backboard SDK v1.5.13<br>for the Backboard Challenges Hackathon</p>',
-        unsafe_allow_html=True,
-    )
+                st.caption(f"PDF error: {pdf_err}")
