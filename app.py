@@ -599,18 +599,29 @@ with right:
                 import unicodedata
 
                 def clean(text):
-                    # Replace common unicode chars with ascii equivalents
                     replacements = {
                         '—': '-', '–': '-', '‘': "'", '’': "'",
-                        '“': '"', '”': '"', '•': '*', '·': '.',
+                        '“': '"', '”': '"', '•': '-', '·': '.',
                         '…': '...', ' ': ' ', '−': '-',
+                        '′': "'", '″': '"', '‐': '-', '‑': '-',
                     }
                     for orig, repl in replacements.items():
                         text = text.replace(orig, repl)
-                    return ''.join(
+                    # Strip non-latin chars
+                    import unicodedata
+                    text = ''.join(
                         c if ord(c) < 256 else unicodedata.normalize('NFKD', c).encode('ascii', 'ignore').decode()
                         for c in text
                     )
+                    # Break any word longer than 80 chars with a space to prevent layout crash
+                    words = text.split(' ')
+                    broken = []
+                    for w in words:
+                        if len(w) > 80:
+                            broken.extend([w[i:i+80] for i in range(0, len(w), 80)])
+                        else:
+                            broken.append(w)
+                    return ' '.join(broken)
 
                 pdf = FPDF()
                 pdf.set_auto_page_break(auto=True, margin=12)
