@@ -27,7 +27,7 @@ async def get_or_create_assistant(client, name, system_prompt, force_update=Fals
 
 
 async def setup_assistants(force_update=False):
-    client = BackboardClient(api_key=os.environ['BACKBOARD_API_KEY'], timeout=120.0)
+    client = BackboardClient(api_key=os.environ['BACKBOARD_API_KEY'], timeout=180.0)
 
     # ── Assistant 1: Planner ─────────────────────────────────────────────
     planner_id = await get_or_create_assistant(
